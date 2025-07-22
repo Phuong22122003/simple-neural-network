@@ -6,10 +6,13 @@ class Embedding(Layer):
         super().__init__()
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
-        self.weights = np.random.randn(vocab_size, embedding_dim) * np.sqrt(1 / vocab_size)
+        self.weights = np.random.randn(vocab_size, embedding_dim) * np.sqrt(1 / embedding_dim)
         self.grad_weights = np.zeros_like(self.weights)
         self.input_indices = None
-
+        self.name = 'Embedding'
+        
+    def __call__(self,input_indices):
+        return self.forward(input_indices)
     def forward(self, input_indices):
         """
         input_indices: (batch_size, seq_len)
@@ -19,23 +22,17 @@ class Embedding(Layer):
         return self.weights[input_indices]  # fancy indexing
 
     def backward(self, grad_outputs):
-        """
-        grad_outputs: (batch_size, seq_len, embedding_dim)
-        → Tính gradient cho mỗi chỉ số input, cộng dồn vào self.grad_weights
-        """
-        self.grad_weights.fill(0)  # reset gradient
+        self.grad_weights.fill(0)
+        
+        # Flatten indices and gradients
+        flat_indices = self.input_indices.flatten()
+        flat_grads = grad_outputs.reshape(-1, self.embedding_dim)
+        
+        # Use numpy's add.at for accumulation (equivalent to scatter_add)
+        np.add.at(self.grad_weights, flat_indices, flat_grads)
+        
+        return None
 
-        # Cộng dồn gradient theo từng chỉ số
-        batch_size, seq_len = self.input_indices.shape
-        for i in range(batch_size):
-            for j in range(seq_len):
-                idx = self.input_indices[i, j]
-                self.grad_weights[idx] += grad_outputs[i, j]
-
-        return None  # không truyền ngược gradient vì input là số nguyên
 
     def parameters(self):
         return [(self.weights, self.grad_weights)]
-
-    def update_weights(self, new_weights, _=None):  # không có bias
-        self.weights = new_weights

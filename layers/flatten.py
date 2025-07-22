@@ -9,6 +9,3 @@ class Flatten(Layer):
 
     def parameters(self):
         return []
-
-    def update_weights(self, *args, **kwargs):
-        pass

@@ -1,11 +1,9 @@
 class Layer:
-
-    def forward(self,inputs):
+    def forward(self, *args, **kwargs):
         raise NotImplementedError()
-    def backward(self,grad_outputs):
+    
+    def backward(self, *args, **kwargs):
         raise NotImplementedError()
+    
     def parameters(self):
         raise NotImplementedError()
-    def update_weights(self,new_weights,new_bias):
-        raise NotADirectoryError()
-        
