@@ -7,3 +7,6 @@ class Layer:
     
     def parameters(self):
         raise NotImplementedError()
+    
+    def __call__(self, *args, **kwds):
+        self.forward(args, kwds)
