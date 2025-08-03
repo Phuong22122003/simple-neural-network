@@ -6,21 +6,23 @@ from tqdm import tqdm
 
 class Model:
     def __init__(self):
-        pass
+        self.optimizer = None
         
-    def to_one_hot(self,y, num_classes):
+    def to_one_hot(self, y, num_classes):
         return np.eye(num_classes)[y]
     
-    def gradient_clip_by_norm(self, grad, max_norm=1.0):
-        """Clip gradients by their L2 norm"""
-        grad_norm = np.linalg.norm(grad)
-        if grad_norm > max_norm:
-            grad *= max_norm / grad_norm
-        return grad
+    def compile(self, optimizer):
+        self.optimizer = optimizer
         
-    def fit(self, inputs, outputs, epochs = 1, batch_size=32, learning_rate=1e-4, to_one_hot = False, verbose = True):
-        layers = self._all_layer()
     
+    def fit(self, inputs, outputs, epochs = 1, batch_size=32, to_one_hot = False, verbose = True):
+        if self.optimizer == None:
+            raise Exception('''optimizer is None
+                            def compile(self, optimizer):
+                                self.optimizer = optimizer''')
+        
+        layers = self._all_layer()
+        self.optimizer.set_layers(layers)
         for epoch in range(epochs):
             total_loss = 0
             steps_per_epoch = 0
@@ -28,7 +30,6 @@ class Model:
                 print(f"\nEpoch {epoch + 1}/{epochs}")
                 
             pbar = tqdm(range(0, inputs.shape[0], batch_size), desc=f"Epoch {epoch+1}", unit="batch") if verbose else range(0, inputs.shape[0], batch_size)
-            learning_rate*=0.95
             
             for i in pbar:
                 
@@ -51,11 +52,7 @@ class Model:
                 for layer in reversed(layers):
                     dl_da = layer.backward(dl_da)
                     
-                # Update param    
-                for layer in layers:
-                    for param, grad in layer.parameters():
-                        grad_clipped  =  self.gradient_clip_by_norm(grad)
-                        param[:]-= learning_rate * grad_clipped
+                self.optimizer.update_per_step()
                         
                 avg_loss = total_loss / steps_per_epoch
                 
